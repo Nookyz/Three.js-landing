@@ -1,4 +1,4 @@
-import './style.css';
+import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
@@ -8,42 +8,42 @@ import fragment from './shaders/fragment.glsl'
 export default class Sketch {
   constructor(options){
 
-    this.container = options.dom;
+    this.container = options.dom
 
-    this.scene = new THREE.Scene();
+    this.scene = new THREE.Scene()
 
-    this.width = this.container.offsetWidth;
-    this.height = this.container.offsetHeight;
+    this.width = this.container.offsetWidth
+    this.height = this.container.offsetHeight
 
     this.camera = new THREE.PerspectiveCamera( 70, this.width / this.height, 0.01, 10 )
-    this.camera.position.z = 1;
+    this.camera.position.z = 1
 
     this.renderer = new THREE.WebGLRenderer( { antialias: true } )
     this.renderer.setSize( this.width, this.height )
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-    this.container.appendChild(this.renderer.domElement);
+    this.container.appendChild(this.renderer.domElement)
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
 
     this.time = 0
 
-    this.resize();
-    this.setupRezise();
-    this.addObjects();
-    this.render();
+    this.resize()
+    this.setupRezise()
+    this.addObjects()
+    this.render()
   }
 
   setupRezise(){
-    window.addEventListener('resize', this.resize.bind(this));
+    window.addEventListener('resize', this.resize.bind(this))
   }
 
   resize() {
-    this.width = this.container.offsetWidth;
-    this.height = this.container.offsetHeight;
-    this.renderer.setSize(this.width, this.height);
-    this.camera.aspect = this.width / this.height;
-    this.camera.updateProjectionMatrix();
+    this.width = this.container.offsetWidth
+    this.height = this.container.offsetHeight
+    this.renderer.setSize(this.width, this.height)
+    this.camera.aspect = this.width / this.height
+    this.camera.updateProjectionMatrix()
   }
 
   addObjects(){
@@ -56,8 +56,8 @@ export default class Sketch {
       wireframe: true,
     })
 
-    this.mesh = new THREE.Mesh( this.geometry, this.material );
-	  this.scene.add( this.mesh );
+    this.mesh = new THREE.Mesh(this.geometry, this.material)
+	  this.scene.add( this.mesh )
   }
 
   render(){
@@ -66,7 +66,7 @@ export default class Sketch {
     // this.mesh.rotation.x += 0.01
 	  // this.mesh.rotation.y += 0.02
 
-    this.renderer.render( this.scene, this.camera )
+    this.renderer.render(this.scene, this.camera)
     
     window.requestAnimationFrame(this.render.bind(this))
   }
