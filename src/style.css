@@ -72,6 +72,10 @@ h1,h2{
   justify-self: end;
 }
 
+img {
+  opacity: 0;
+}
+
 .item img{
   width: 100%;
   display: block;

@@ -1,8 +1,11 @@
 import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import imagesLoaded from 'imagesloaded';
-import FontFaceObserver from 'fontfaceobserver';
+import imagesLoaded from 'imagesloaded'
+import FontFaceObserver from 'fontfaceobserver'
+import gsap from 'gsap'
+
+import Scroll from './scroll';
 
 import vertex from './shaders/vertex.glsl'
 import fragment from './shaders/fragment.glsl'
@@ -23,14 +26,6 @@ export default class Sketch {
     this.width = window.innerWidth
     this.height = window.innerHeight
 
-    console.log('this.container.offsetWidth', this.container.offsetWidth)
-    console.log('this.container.offsetHeight', this.container.offsetHeight)
-
-    console.log('this.width', this.width)
-    console.log('this.height', this.height)
-
-    console.log('innerHTML', this.container.innerHTML)
-
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true
@@ -47,9 +42,14 @@ export default class Sketch {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
 
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
     this.images = [...document.querySelectorAll('img')]
 
     this.time = 0
+
+    this.currentScroll = 0;
     
     const fontOpen = new Promise(resolve => {
       new FontFaceObserver("Open Sans").load().then(() => {
@@ -71,13 +71,40 @@ export default class Sketch {
     let allDone = [fontOpen,fontPlayfair,preloadImages]
 
     Promise.all(allDone).then(()=>{
+      this.scroll = new Scroll()
+
       this.addImages()
       this.setPosition()
 
+      
+      this.onMouseMove()
       this.resize()
       this.setupRezise()
       // this.addObjects()
       this.render()
+
+      // window.addEventListener('scroll', () => {
+      //   this.currentScroll = window.scrollY
+      //   this.setPosition()
+      // })
+    })
+  }
+
+  onMouseMove(){
+    window.addEventListener('mousemove', (event) => {
+      this.mouse.x = ( event.clientX / this.width ) * 2 - 1;
+	    this.mouse.y = - ( event.clientY / this.height ) * 2 + 1;
+
+      // update the picking ray with the camera and mouse position
+      this.raycaster.setFromCamera( this.mouse, this.camera );
+
+      // calculate objects intersecting the picking ray
+      const intersects = this.raycaster.intersectObjects( this.scene.children );
+
+      if(intersects.length > 0){
+        let obj = intersects[0].object
+        obj.material.uniforms.hover.value = intersects[0].uv
+      }
     })
   }
 
@@ -86,26 +113,60 @@ export default class Sketch {
   }
 
   resize() {
-    // this.width = this.container.offsetWidth
-    // this.height = this.container.offsetHeight
     this.width = window.innerWidth
     this.height = window.innerHeight
 
     this.renderer.setSize(this.width, this.height)
     this.camera.aspect = this.width / this.height
     this.camera.updateProjectionMatrix()
+
+    // this.setPosition()
   }
 
   addImages(){
+    this.material = new THREE.ShaderMaterial({
+      uniforms: { 
+        time: {value: 0},
+        uImage: {value: 0},
+        hover: {value: new THREE.Vector2(0.5, 0.5)},
+        hoverState: {value: 0}
+      },
+      vertexShader: vertex,
+      fragmentShader: fragment,
+      side: THREE.DoubleSide,
+    })
+
+    this.materials = []
+
     this.imageStore = this.images.map(img => {
       let bounds = img.getBoundingClientRect()
 
-      let geometry = new THREE.PlaneBufferGeometry(bounds.width, bounds.height, 1, 1)
+      let geometry = new THREE.PlaneBufferGeometry(bounds.width, bounds.height, 10, 10)
       let texture = new THREE.Texture(img)
       texture.needsUpdate = true
-      let material = new THREE.MeshBasicMaterial({
-        map: texture
+      // let material = new THREE.MeshBasicMaterial({
+      //   map: texture
+      // })
+
+      let material = this.material.clone()
+
+      img.addEventListener('mouseenter', () => {
+        gsap.to(material.uniforms.hoverState, {
+          duration: 1,
+          value: 1
+        })
       })
+
+      img.addEventListener('mouseout', () => {
+        gsap.to(material.uniforms.hoverState, {
+          duration: 1,
+          value: 0
+        })
+      })
+
+      this.materials.push(material)
+
+      material.uniforms.uImage.value = texture
 
       let mesh = new THREE.Mesh(geometry, material)
 
@@ -126,7 +187,7 @@ export default class Sketch {
 
   setPosition(){
     this.imageStore.forEach((o) => {
-      o.mesh.position.y = -o.top + this.height / 2 - o.height / 2
+      o.mesh.position.y = this.currentScroll -o.top + this.height / 2 - o.height / 2
       o.mesh.position.x = o.left - this.width / 2 + o.width / 2
     })
   }
@@ -153,10 +214,14 @@ export default class Sketch {
   render(){
     this.time += 0.02
 
-    // this.mesh.rotation.x = this.time / 2000
-	  // this.mesh.rotation.y = this.time / 1000
+    this.scroll.render()
 
-    this.material.uniforms.time.value = this.time
+    this.currentScroll = this.scroll.scrollToRender
+    this.setPosition()
+
+    this.materials.forEach((m) => {
+      m.uniforms.time.value = this.time
+    })
 
     this.renderer.render(this.scene, this.camera)
     
@@ -164,8 +229,6 @@ export default class Sketch {
   }
 }
 
-const dom = document.getElementById('canvas')
-
 new Sketch({
-  dom
+  dom: document.getElementById('canvas')
 })
