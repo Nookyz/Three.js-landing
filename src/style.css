@@ -3,6 +3,12 @@
   padding: 0;
 }
 
+html,
+body {
+  /* width: 100%; */
+  height: 100%;
+}
+
 body{
   font-family: 'Open Sans', sans-serif;
 }
@@ -30,9 +36,7 @@ h1{
   transform: translate(-50%,-50%);
   color: #047582;
   mix-blend-mode: color-burn;
-  font-size: 18vw;
-
-  
+  font-size: 260px;
 }
 
 header img{
@@ -71,7 +75,7 @@ h1,h2{
 .item img{
   width: 100%;
   display: block;
-  /* opacity: 0; */
+  opacity: 0;
 }
 
 .item__image{
@@ -145,10 +149,14 @@ h1,h2{
 }
 
 #canvas{
-  height: 100vh;
-  width: 100vw;
+  /* height: 100vh;
+  width: 100vw; */
+  height: 100%;
+  width: 100%;
   position: fixed;
   z-index: -1;
   top: 0;
   left: 0;
+  right: 0;
+  bottom: 0;
 }
