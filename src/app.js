@@ -16,8 +16,6 @@ export default class Sketch {
   constructor(options){
     this.container = options.dom
 
-    console.log('this.container', this.container)
-
     this.scene = new THREE.Scene()
 
     // this.width = this.container.offsetWidth
