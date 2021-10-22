@@ -32,6 +32,9 @@ export default class Sketch {
     this.width = window.innerWidth
     this.height = window.innerHeight
 
+    console.log('this.width', this.width)
+    console.log('this.height', this.height)
+
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true
@@ -56,6 +59,7 @@ export default class Sketch {
     this.time = 0
 
     this.currentScroll = 0;
+    this.previousScroll = 0
     
     const fontOpen = new Promise(resolve => {
       new FontFaceObserver("Open Sans").load().then(() => {
@@ -175,8 +179,6 @@ export default class Sketch {
     this.renderer.setSize(this.width, this.height)
     this.camera.aspect = this.width / this.height
     this.camera.updateProjectionMatrix()
-
-    // this.setPosition()
   }
 
   addImages(){
@@ -197,7 +199,7 @@ export default class Sketch {
     this.imageStore = this.images.map(img => {
       let bounds = img.getBoundingClientRect()
 
-      let geometry = new THREE.PlaneBufferGeometry(bounds.width, bounds.height, 10, 10)
+      let geometry = new THREE.PlaneBufferGeometry(1, 1, 10, 10)
       let texture = new THREE.Texture(img)
       texture.needsUpdate = true
       // let material = new THREE.MeshBasicMaterial({
@@ -225,6 +227,7 @@ export default class Sketch {
       material.uniforms.uImage.value = texture
 
       let mesh = new THREE.Mesh(geometry, material)
+      // mesh.scale.set(bounds.width, bounds.height, 1)
 
       this.scene.add(mesh)
 
@@ -245,6 +248,8 @@ export default class Sketch {
     this.imageStore.forEach((o) => {
       o.mesh.position.y = this.currentScroll -o.top + this.height / 2 - o.height / 2
       o.mesh.position.x = o.left - this.width / 2 + o.width / 2
+
+      o.mesh.scale.set(o.width, o.height, 1)
     })
   }
 
@@ -272,7 +277,13 @@ export default class Sketch {
 
     this.scroll.render()
 
+    this.previousScroll = this.currentScroll
     this.currentScroll = this.scroll.scrollToRender
+
+    if(Math.round(this.currentScroll) !== Math.round(this.previousScroll)) {
+      console.log('need render')  
+    }
+
     this.setPosition()
 
     this.customPass.uniforms.scrollSpeed.value = this.scroll.speedTarget
@@ -282,10 +293,10 @@ export default class Sketch {
       m.uniforms.time.value = this.time
     })
 
+    this.composer.render()
+
     // this.renderer.render(this.scene, this.camera)
 
-    this.composer.render()
-    
     window.requestAnimationFrame(this.render.bind(this))
   }
 }
