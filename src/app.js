@@ -14,6 +14,7 @@ import Scroll from './scroll';
 
 import vertex from './shaders/vertex.glsl'
 import fragment from './shaders/fragment.glsl'
+import noise from './shaders/noise.glsl'
 
 import t1 from '../assets/images/1.jpg'
 import t2 from '../assets/images/2.jpg'
@@ -103,6 +104,7 @@ export default class Sketch {
       uniforms: {
         "tDiffuse": { value: null },
         "scrollSpeed": { value: null },
+        "time": { value: 0 },
       },
       vertexShader: `
         varying vec2 vUv;
@@ -117,13 +119,23 @@ export default class Sketch {
         uniform sampler2D tDiffuse;
         varying vec2 vUv;
         uniform float scrollSpeed;
+        uniform float time;
+
+        ${noise}
+
         void main(){
           vec2 newUV = vUv;
-          float area = smoothstep(0.4,0.,vUv.y);
-          area = pow(area,4.);
+          float area = smoothstep(1.0, 0.8,vUv.y) * 2.0 - 1.0;
+          // area = pow(area,4.);
+
+          float noise = 0.5 * (cnoise(vec3(vUv * 10.0, time / 3.0)) + 1.0);
+          float n = smoothstep(0.5, 0.5, noise + area);
+
           newUV.x -= (vUv.x - 0.5)*0.1*area*scrollSpeed;
           gl_FragColor = texture2D( tDiffuse, newUV);
-          // gl_FragColor = vec4(area,0.,0.,1.);
+          // gl_FragColor = vec4(n, 0.0, 0.0, 1.0);
+
+          gl_FragColor = mix(vec4(1.0), texture2D( tDiffuse, newUV), n);
         }
       `
     }
@@ -264,6 +276,7 @@ export default class Sketch {
     this.setPosition()
 
     this.customPass.uniforms.scrollSpeed.value = this.scroll.speedTarget
+    this.customPass.uniforms.time.value = this.time
 
     this.materials.forEach((m) => {
       m.uniforms.time.value = this.time
